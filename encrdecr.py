@@ -35,14 +35,15 @@ def main():
     prefixes = [b_prefix, g_prefix, n_prefix]
     
     if args.genkey and not (args.encr or args.decr or args.key or args.passwd):
-        
+        # generate random key only
         _write_gen_key(_gen_key(), prefixes)
         
     elif args.passwd and not (args.genkey or args.encr or args.decr):
-        
+        # generate key from password
         _write_passwd_key(args.passwd, _gen_passwd_key(args.passwd), prefixes)
 
     elif args.genkey and args.encr and not (args.decr or args.passwd):
+        # generate random key, encrypt file and save
         _key = _gen_key()
         _write_gen_key(_key, prefixes)
         try:
@@ -56,9 +57,25 @@ def main():
             print(prefixes[0]+"\'"+args.encr+"\'"+" file not found, I'm assuming it's a string")
             _pt_data = args.encr
             _encr_str(_pt_data.encode(), _key, prefixes)
-    # TODO add encrypt/decrypt using already generated keys
+            
+    elif args.paswd and args.encr and not (args.decr or args.genkey):
+        # generate key from password, encrypt file and save
+        _key = _gen_passwd_key(args.passwd)
+        _write_passwd_key(args.passwd, _key, prefixes)
+        try:
+            if os.path.exists(args.encr):                
+                with open(args.encr, 'rb') as in_file:
+                    _pt_data = in_file.read()
+                _encr_and_write(args.encr, _pt_data, _key, prefixes)
+            else:
+                raise FileNotFoundError
+        except FileNotFoundError:
+            print(prefixes[0]+"\'"+args.encr+"\'"+" file not found, I'm assuming it's a string")
+            _pt_data = args.encr
+            _encr_str(_pt_data.encode(), _key, prefixes)
     # TODO add decrypt functions
     else:
+        # catch all
         parser.print_help()
             
     sys.exit(0)
@@ -93,7 +110,11 @@ def _write_gen_key(key, prefixes):
     
 def _gen_passwd_key(passwd):
     '''
-    
+    TODO:  Add option to decrypt using only password. This means that the salt must be saved
+    somewhere.
+
+    If a password is used, does the key file need to be saved at all?
+
     '''
     _salt = os.urandom(16) # gen random salt
     print(_salt)
