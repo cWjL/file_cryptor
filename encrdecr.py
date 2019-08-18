@@ -7,6 +7,10 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 def main():
+    '''
+    File/string encrytpion/decryption script.  Uses Fernet symmetric key encryption algorithm.
+    128-bit AES in CBC mode.  HMAC is SHA256 with random 16 bit salt.
+    '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-g','--genkey',action='store_true',dest='genkey',help='Generate new random key')
     parser.add_argument('-p','--passwd',action='store',dest='passwd',help='Generate key from password')
@@ -28,7 +32,7 @@ def main():
         g_prefix = "[ OK ] "
         n_prefix = "[ ** ] "
 
-    prefixes = [b_prefix, g_prefix,n_prefix]
+    prefixes = [b_prefix, g_prefix, n_prefix]
     
     if args.genkey and not (args.encr or args.decr or args.key or args.passwd):
         
@@ -36,16 +40,13 @@ def main():
         
     elif args.passwd and not (args.genkey or args.encr or args.decr):
         
-        _write_passwd_key(_gen_passwd_key(args.passwd))
+        _write_passwd_key(args.passwd, _gen_passwd_key(args.passwd), prefixes)
 
     elif args.genkey and args.encr and not (args.decr or args.passwd):
-        print("hey")
         _key = _gen_key()
         _write_gen_key(_key, prefixes)
         try:
-            if os.path.exists(args.encr):
-                
-                #_fp = os.path.abspath(args.encr)
+            if os.path.exists(args.encr):                
                 with open(args.encr, 'rb') as in_file:
                     _pt_data = in_file.read()
                 _encr_and_write(args.encr, _pt_data, _key, prefixes)
@@ -55,6 +56,10 @@ def main():
             print(prefixes[0]+"\'"+args.encr+"\'"+" file not found, I'm assuming it's a string")
             _pt_data = args.encr
             _encr_str(_pt_data.encode(), _key, prefixes)
+    # TODO add encrypt/decrypt using already generated keys
+    # TODO add decrypt functions
+    else:
+        parser.print_help()
             
     sys.exit(0)
 
@@ -69,13 +74,13 @@ def _encr_and_write(in_file, data, key, prefixes):
     with open(in_file+".encr",'wb') as out_file:
         out_file.write(_encr_data)
 
-def _write_passwd_key(pass_key, prefixes):
+def _write_passwd_key(passwd, pass_key, prefixes):
     _key_file = ""
     with open('encr.key','wb') as new_key:
-        new_key.write(_key)
+        new_key.write(pass_key)
         _key_file = os.path.abspath('encr.key')
-    print(prefixes[1]+"Password provided: "+args.passwd)
-    print(prefixes[1]+"New key: "+_key.decode())
+    print(prefixes[1]+"Password provided: "+passwd)
+    print(prefixes[1]+"New key: "+pass_key.decode())
     print(prefixes[1]+"Wrote new key to: "+_key_file)
 
 def _write_gen_key(key, prefixes):
@@ -87,7 +92,11 @@ def _write_gen_key(key, prefixes):
     print(prefixes[1]+"Wrote new key to: "+_key_file)
     
 def _gen_passwd_key(passwd):
-    _salt = b'\xf2.\xd6\x83\x93\xa9B\xf4\x9e2\xae\x1a\xb0y\xccS'
+    '''
+    
+    '''
+    _salt = os.urandom(16) # gen random salt
+    print(_salt)
     _passwd = passwd.encode()
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
