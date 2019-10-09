@@ -2,6 +2,7 @@
 
 import base64, os, argparse, sys
 from cryptography.fernet import Fernet
+from cryptography.fernet import InvalidToken
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -57,6 +58,7 @@ def main():
             _encr_str(_pt_data.encode(), _key, prefixes)
     elif args.decr and args.key and not (args.encr or args.passwd):
         
+        
 
     sys.exit(0)
 
@@ -110,6 +112,23 @@ def main():
             
     sys.exit(0)
 
+def _decr_with_key(data, key, prefixes):
+    _fn = Fernet(key)
+    try:
+        _decr_data = _fn.decrypt(data)
+        print(prefixes[1]+"Dencrypted string: "+_decr_data.decode())
+    except InvaidToken:
+        raise ValueError("Invalid Key!")
+
+def _decr_with_passwd(data, passwd, prefixes):
+    _key = _gen_passwd_key(passwd)
+    _fn = Fernet(_key)
+    try:
+        _decr_data = _fn.decrypt(data)
+        print(prefixes[1]+"Dencrypted string: "+_decr_data.decode())
+    except InvalidToken:
+        raise ValueError("Invalid Password!")
+
 def _encr_str(data, key, prefixes):
     _fn = Fernet(key)
     _encr_data = _fn.encrypt(data)
@@ -146,8 +165,9 @@ def _gen_passwd_key(passwd):
     If a password is used, does the key file need to be saved at all?
 
     '''
-    _salt = os.urandom(16) # gen random salt
-    print(_salt)
+    _salt_str = "1337AF" # gen random salt
+    _salt = str.encode(_salt_str)
+
     _passwd = passwd.encode()
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
