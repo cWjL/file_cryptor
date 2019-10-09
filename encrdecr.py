@@ -17,9 +17,10 @@ def main():
     parser.add_argument('-e','--encrypt',action='store',dest='encr',help='Encrypt this file or string')
     parser.add_argument('-d','--decrypt',action='store',dest='decr',help='Decrypt this file or string')
     parser.add_argument('-k','--key',action='store',dest='key',help='Use this key')
-    
-    args = parser.parse_args()
+    parser.add_argument('-w','--passwd-key',action='store',dest='passkey',help='Decrypt with this password')
 
+    args = parser.parse_args()
+    
     try:
         import colorama
         from colorama import Fore, Style
@@ -33,6 +34,35 @@ def main():
         n_prefix = "[ ** ] "
 
     prefixes = [b_prefix, g_prefix, n_prefix]
+    
+    ###################################################################################################
+    ##################################### DEBUG ######################################################
+    ##################################################################################################
+    # Testing creating key with password then decrypting it with the same password
+    if args.passwd and not (args.genkey or args.encr or args.decr):
+        _write_passwd_key(args.passwd, _gen_passwd_key(args.passwd), prefixes)
+    elif args.passwd and args.encr and not (args.genkey or args.decr):
+        _key = _gen_passwd_key(args.passwd)
+        _write_passwd_key(args.passwd, _key, prefixes)
+        try:
+            if os.path.exists(args.encr):                
+                with open(args.encr, 'rb') as in_file:
+                    _pt_data = in_file.read()
+                _encr_and_write(args.encr, _pt_data, _key, prefixes)
+            else:
+                raise FileNotFoundError
+        except FileNotFoundError:
+            print(prefixes[0]+"\'"+args.encr+"\'"+" file not found, I'm assuming it's a string")
+            _pt_data = args.encr
+            _encr_str(_pt_data.encode(), _key, prefixes)
+    elif args.decr and args.key and not (args.encr or args.passwd):
+        
+
+    sys.exit(0)
+
+    ##################################################################################################
+    ################################### / DEBUG ######################################################
+    ##################################################################################################
     
     if args.genkey and not (args.encr or args.decr or args.key or args.passwd):
         # generate random key only
