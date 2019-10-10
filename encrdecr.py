@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 def main():
     '''
     File/string encrytpion/decryption script.  Uses Fernet symmetric key encryption algorithm.
-    128-bit AES in CBC mode.  HMAC is SHA256 with random 16 bit salt.
+    128-bit AES in CBC mode.  HMAC is SHA256 with 16 bit salt.
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-g','--genkey',action='store_true',dest='genkey',help='Generate new random key')
@@ -20,7 +20,6 @@ def main():
     parser.add_argument('-k','--key',action='store',dest='key',help='Use this key')
 
     args = parser.parse_args()
-    
     '''
     BLUE = '\033[94m'
     GREEN = '\033[92m'
@@ -44,6 +43,7 @@ def main():
         b_prefix = "[FAIL] "
         g_prefix = "[ OK ] "
         n_prefix = "[ ** ] "
+    
 
     prefixes = [b_prefix, g_prefix, n_prefix]
     
@@ -79,6 +79,13 @@ def main():
     sys.exit(0)
 
 def _decr_with_key(data, key, prefixes):
+    '''
+    Decrypt file with pregenerated key
+
+    @param data to be decrypted
+    @param key file path
+    @param array of color coded print prefixes
+    '''
     try:
         
         if os.path.exists(key):
@@ -121,6 +128,13 @@ def _decr_with_key(data, key, prefixes):
         print(prefixes[0]+"Invalid Key")
 
 def _decr_with_passwd(data, passwd, prefixes):
+    '''
+    Decrypt file with password
+
+    @param data to be decrypted
+    @param password
+    @param array of color coded print prefixes
+    '''
     _key = _gen_passwd_key(passwd)
     _fn = Fernet(_key)
 
@@ -138,7 +152,7 @@ def _decr_with_passwd(data, passwd, prefixes):
                     out_file.write(_decr_data)
 
                 os.remove(data)
-                print(prefixes[1]+"Key provided: "+"\'"+key+"\'")
+                print(prefixes[1]+"Key provided: "+"\'"+passwd+"\'")
                 print(prefixes[1]+"File processed: "+"\'"+data+"\'")
                 print(prefixes[1]+"Decrypted file created: "+"\'"+_plain_file_name+"\'")
             else:
@@ -154,6 +168,13 @@ def _decr_with_passwd(data, passwd, prefixes):
         print(prefixes[0]+"Invalid password")
 
 def _encr_and_write(in_file, key, prefixes):
+    '''
+    Encrypt file with pregenerated key and write to file system
+
+    @param data to be encrypted
+    @param key file path or password
+    @param array of color coded print prefixes
+    '''
     _fn = Fernet(key)
 
     if os.path.exists(in_file):
@@ -175,6 +196,13 @@ def _encr_and_write(in_file, key, prefixes):
         print(prefixes[1]+"Encrypted string: "+_encr_data.decode())
 
 def _write_passwd_key(passwd, pass_key, prefixes):
+    '''
+    Write out the key generated from password and show the password
+
+    @param password
+    @param key file path
+    @param array of color coded print prefixes
+    '''
     _key_file = ""
     with open('encr.key','wb') as new_key:
         new_key.write(pass_key)
@@ -184,6 +212,12 @@ def _write_passwd_key(passwd, pass_key, prefixes):
     print(prefixes[1]+"Wrote new key to: "+_key_file)
 
 def _write_gen_key(key, prefixes):
+    '''
+    Write out key
+
+    @param key file path
+    @param array of color coded print prefixes
+    '''
     _key_file = ""
     with open('encr.key','wb') as new_key:
         new_key.write(key)
@@ -193,11 +227,10 @@ def _write_gen_key(key, prefixes):
     
 def _gen_passwd_key(passwd):
     '''
-    TODO:  Add option to decrypt using only password. This means that the salt must be saved
-    somewhere.
+    Generate key from password
 
-    If a password is used, does the key file need to be saved at all?
-
+    @param password
+    @return hashed password
     '''
     _salt_str = "1337AF" # gen random salt
     _salt = str.encode(_salt_str)
@@ -214,7 +247,11 @@ def _gen_passwd_key(passwd):
     
         
 def _gen_key():
+    '''
+    Generate random key
 
+    @return key
+    '''
     return Fernet.generate_key()
     
 if __name__ == "__main__":
